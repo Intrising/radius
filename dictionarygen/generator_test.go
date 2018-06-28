@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"layeh.com/radius/dictionary"
+	"github.com/Intrising/radius/dictionary"
 )
 
 func TestTestData(t *testing.T) {

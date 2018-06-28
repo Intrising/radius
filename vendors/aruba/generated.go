@@ -6,8 +6,8 @@ import (
 	"net"
 	"strconv"
 
-	"layeh.com/radius"
-	"layeh.com/radius/rfc2865"
+	"github.com/Intrising/radius"
+	"github.com/Intrising/radius/rfc2865"
 )
 
 const (

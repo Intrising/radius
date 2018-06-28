@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"layeh.com/radius"
+	"github.com/Intrising/radius"
 )
 
 const (
@@ -20,6 +20,7 @@ const (
 	Prompt_Type               radius.Type = 76
 	ConnectInfo_Type          radius.Type = 77
 	ConfigurationToken_Type   radius.Type = 78
+	EAPMessage_Type           radius.Type = 79
 	MessageAuthenticator_Type radius.Type = 80
 	AcctInterimInterval_Type  radius.Type = 85
 	NASPortID_Type            radius.Type = 87
@@ -697,6 +698,99 @@ func ConfigurationToken_SetString(p *radius.Packet, value string) (err error) {
 		return
 	}
 	p.Set(ConfigurationToken_Type, a)
+	return
+}
+
+func EAPMessage_Add(p *radius.Packet, value []byte) (err error) {
+	var a radius.Attribute
+	a, err = radius.NewBytes(value)
+	if err != nil {
+		return
+	}
+	p.Add(EAPMessage_Type, a)
+	return nil
+}
+
+func EAPMessage_AddString(p *radius.Packet, value string) (err error) {
+	var a radius.Attribute
+	a, err = radius.NewString(value)
+	if err != nil {
+		return
+	}
+	p.Add(EAPMessage_Type, a)
+	return nil
+}
+
+func EAPMessage_Get(p *radius.Packet) (value []byte) {
+	value, _ = EAPMessage_Lookup(p)
+	return
+}
+
+func EAPMessage_GetString(p *radius.Packet) (value string) {
+	return string(EAPMessage_Get(p))
+}
+
+func EAPMessage_Gets(p *radius.Packet) (values [][]byte, err error) {
+	var i []byte
+	for _, attr := range p.Attributes[EAPMessage_Type] {
+		i = radius.Bytes(attr)
+		if err != nil {
+			return
+		}
+		values = append(values, i)
+	}
+	return
+}
+
+func EAPMessage_GetStrings(p *radius.Packet) (values []string, err error) {
+	var i string
+	for _, attr := range p.Attributes[EAPMessage_Type] {
+		i = radius.String(attr)
+		if err != nil {
+			return
+		}
+		values = append(values, i)
+	}
+	return
+}
+
+func EAPMessage_Lookup(p *radius.Packet) (value []byte, err error) {
+	a, ok := p.Lookup(EAPMessage_Type)
+	if !ok {
+		err = radius.ErrNoAttribute
+		return
+	}
+	value = radius.Bytes(a)
+	return
+}
+
+func EAPMessage_LookupString(p *radius.Packet) (value string, err error) {
+	a, ok := p.Lookup(EAPMessage_Type)
+	if !ok {
+		err = radius.ErrNoAttribute
+		return
+	}
+	value = radius.String(a)
+	return
+}
+
+func EAPMessage_Set(p *radius.Packet, value []byte) (err error) {
+	var a radius.Attribute
+	a, err = radius.NewBytes(value)
+	if err != nil {
+		return
+	}
+	p.Set(EAPMessage_Type, a)
+	return
+}
+
+func EAPMessage_SetString(p *radius.Packet, value string) (err error) {
+	var a radius.Attribute
+	a, err = radius.NewString(value)
+	if err != nil {
+		return
+	}
+	p.Set(EAPMessage_Type, a)
 	return
 }
 
