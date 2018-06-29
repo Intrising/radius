@@ -34,20 +34,15 @@ var DefaultClient = &Client{}
 
 // Exchange uses DefaultClient to send the given RADIUS packet to the server at
 // address addr and waits for a response.
-func Exchange(ctx context.Context, packet *Packet, addr string) (*Packet, error) {
-	return DefaultClient.Exchange(ctx, packet, addr)
+func Exchange(ctx context.Context, packet *Packet, addr string, newPacket []byte) (*Packet, error) {
+	return DefaultClient.Exchange(ctx, packet, addr, newPacket)
 }
 
 // Exchange sends the packet to the given server and waits for a response. ctx
 // must be non-nil.
-func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string) (*Packet, error) {
+func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newPacket []byte) (*Packet, error) {
 	if ctx == nil {
 		panic("nil context")
-	}
-
-	wire, err := packet.Encode()
-	if err != nil {
-		return nil, err
 	}
 
 	connNet := c.Net
@@ -65,7 +60,7 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string) (*Pa
 		conn.SetDeadline(deadline)
 	}
 
-	conn.Write(wire)
+	conn.Write(newPacket)
 
 	if c.Retry > 0 {
 		retry := time.NewTicker(c.Retry)
@@ -76,7 +71,7 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string) (*Pa
 			for {
 				select {
 				case <-retry.C:
-					conn.Write(wire)
+					conn.Write(newPacket)
 				case <-ctx.Done():
 					return
 				case <-end:
@@ -104,7 +99,7 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string) (*Pa
 			continue
 		}
 
-		if !c.InsecureSkipVerify && !IsAuthenticResponse(incoming[:n], wire, packet.Secret) {
+		if !c.InsecureSkipVerify && !IsAuthenticResponse(incoming[:n], newPacket, packet.Secret) {
 			packetErrorCount++
 			if c.MaxPacketErrors > 0 && packetErrorCount >= c.MaxPacketErrors {
 				return nil, &NonAuthenticResponseError{}
