@@ -34,13 +34,13 @@ var DefaultClient = &Client{}
 
 // Exchange uses DefaultClient to send the given RADIUS packet to the server at
 // address addr and waits for a response.
-func Exchange(ctx context.Context, packet *Packet, addr string, newPacket []byte) (*Packet, error) {
-	return DefaultClient.Exchange(ctx, packet, addr, newPacket)
+func Exchange(ctx context.Context, secret []byte, packet []byte, addr string) ([]byte, error) {
+	return DefaultClient.Exchange(ctx, secret, packet, addr)
 }
 
 // Exchange sends the packet to the given server and waits for a response. ctx
 // must be non-nil.
-func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newPacket []byte) (*Packet, error) {
+func (c *Client) Exchange(ctx context.Context, secret []byte, packet []byte, addr string) ([]byte, error) {
 	if ctx == nil {
 		panic("nil context")
 	}
@@ -60,7 +60,7 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newP
 		conn.SetDeadline(deadline)
 	}
 
-	conn.Write(newPacket)
+	conn.Write(packet)
 
 	if c.Retry > 0 {
 		retry := time.NewTicker(c.Retry)
@@ -71,7 +71,7 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newP
 			for {
 				select {
 				case <-retry.C:
-					conn.Write(newPacket)
+					conn.Write(packet)
 				case <-ctx.Done():
 					return
 				case <-end:
@@ -90,16 +90,16 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newP
 			return nil, err
 		}
 
-		received, err := Parse(incoming[:n], packet.Secret)
-		if err != nil {
-			packetErrorCount++
-			if c.MaxPacketErrors > 0 && packetErrorCount >= c.MaxPacketErrors {
-				return nil, err
-			}
-			continue
-		}
+		// received, err := Parse(incoming[:n], packet.Secret)
+		// if err != nil {
+		// 	packetErrorCount++
+		// 	if c.MaxPacketErrors > 0 && packetErrorCount >= c.MaxPacketErrors {
+		// 		return nil, nil, err
+		// 	}
+		// 	continue
+		// }
 
-		if !c.InsecureSkipVerify && !IsAuthenticResponse(incoming[:n], newPacket, packet.Secret) {
+		if !c.InsecureSkipVerify && !IsAuthenticResponse(incoming[:n], packet, secret) {
 			packetErrorCount++
 			if c.MaxPacketErrors > 0 && packetErrorCount >= c.MaxPacketErrors {
 				return nil, &NonAuthenticResponseError{}
@@ -107,6 +107,6 @@ func (c *Client) Exchange(ctx context.Context, packet *Packet, addr string, newP
 			continue
 		}
 
-		return received, nil
+		return incoming[:n], nil
 	}
 }
